@@ -22,12 +22,14 @@ const userRoutes = require('./routes/users');
 const leetcodeRoutes = require('./routes/platform');
 const pdfRoutes = require('./routes/pdf');
 const resumeRoutes = require('./routes/resume');
+const certificationRoutes = require('./routes/certifications');
 
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/platform', leetcodeRoutes);
 app.use('/api/pdfs', pdfRoutes);
 app.use('/api/resumes', resumeRoutes);
+app.use('/api/certifications', certificationRoutes);
 
 const PORT = process.env.PORT || 5000;
 

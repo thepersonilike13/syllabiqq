@@ -23,6 +23,16 @@ export default function ProfileDashboard() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
+  // Certification states
+  const [certifications, setCertifications] = useState([]);
+  const [showCertModal, setShowCertModal] = useState(false);
+  const [certFile, setCertFile] = useState(null);
+  const [certName, setCertName] = useState("");
+  const [certOrg, setCertOrg] = useState("");
+  const [uploadingCert, setUploadingCert] = useState(false);
+  const [certError, setCertError] = useState("");
+  const [certSuccess, setCertSuccess] = useState("");
+
   useEffect(() => {
     const storedUser = getStoredUser();
     if (!storedUser) {
@@ -35,7 +45,118 @@ export default function ProfileDashboard() {
       email: storedUser.email || ""
     });
     fetchUserLinks(storedUser.id);
+    fetchCertifications(storedUser.id);
   }, [navigate]);
+
+  const fetchCertifications = async (userId) => {
+    try {
+      const response = await axios.get(`http://localhost:5000/api/certifications/user/${userId}`);
+      if (response.data.success) {
+        setCertifications(response.data.data);
+      }
+    } catch (err) {
+      console.error("Error fetching certifications:", err);
+    }
+  };
+
+  const handleCertFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      if (file.type !== 'application/pdf' && !file.type.startsWith('image/')) {
+        setCertError('Only PDF and image files are allowed');
+        return;
+      }
+      if (file.size > 10 * 1024 * 1024) {
+        setCertError('File size must be less than 10MB');
+        return;
+      }
+      setCertFile(file);
+      setCertError('');
+    }
+  };
+
+  const handleCertUpload = async (e) => {
+    e.preventDefault();
+    
+    if (!certFile) {
+      setCertError('Please select a file');
+      return;
+    }
+    if (!certName.trim()) {
+      setCertError('Please enter the certificate name');
+      return;
+    }
+    if (!certOrg.trim()) {
+      setCertError('Please enter the organization name');
+      return;
+    }
+
+    try {
+      setUploadingCert(true);
+      setCertError('');
+      setCertSuccess('');
+
+      const formData = new FormData();
+      formData.append('certificate', certFile);
+      formData.append('name', certName.trim());
+      formData.append('organization', certOrg.trim());
+      formData.append('userId', user.id);
+
+      await axios.post('http://localhost:5000/api/certifications', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+
+      setCertSuccess('Certification uploaded successfully!');
+      setCertFile(null);
+      setCertName('');
+      setCertOrg('');
+      fetchCertifications(user.id);
+
+      setTimeout(() => {
+        setShowCertModal(false);
+        setCertSuccess('');
+      }, 1500);
+    } catch (err) {
+      console.error('Upload error:', err);
+      setCertError(err.response?.data?.message || 'Failed to upload certification');
+    } finally {
+      setUploadingCert(false);
+    }
+  };
+
+  const handleCertDownload = async (certId, certName) => {
+    try {
+      const response = await axios.get(`http://localhost:5000/api/certifications/${certId}`, {
+        responseType: 'blob'
+      });
+      
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `${certName}.pdf`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error('Download error:', err);
+      alert('Failed to download certification');
+    }
+  };
+
+  const handleCertDelete = async (certId) => {
+    if (!window.confirm('Are you sure you want to delete this certification?')) {
+      return;
+    }
+    
+    try {
+      await axios.delete(`http://localhost:5000/api/certifications/${certId}`);
+      fetchCertifications(user.id);
+    } catch (err) {
+      console.error('Delete error:', err);
+      alert('Failed to delete certification');
+    }
+  };
 
   const fetchUserLinks = async (userId) => {
     try {
@@ -262,51 +383,126 @@ export default function ProfileDashboard() {
 
       {/* CERTIFICATES SECTION */}
       <div className="certificates-section">
-        <h3>Certificates</h3>
+        <h3>Certifications</h3>
         <div className="certificates-preview">
-          <div className="cert-item">
-            <span className="cert-name">AWS Cloud Practitioner</span>
-            <span className="cert-org">Amazon Web Services</span>
-          </div>
-          <hr className="cert-divider" />
-          <div className="cert-item">
-            <span className="cert-name">React Developer Certificate</span>
-            <span className="cert-org">Meta</span>
-          </div>
-          <hr className="cert-divider" />
-          <div className="cert-item">
-            <span className="cert-name">JavaScript Fundamentals</span>
-            <span className="cert-org">FreeCodeCamp</span>
-          </div>
-          <hr className="cert-divider" />
-          <div className="cert-item">
-            <span className="cert-name">Data Structures & Algorithms</span>
-            <span className="cert-org">Coursera</span>
-          </div>
-          <hr className="cert-divider" />
-          <div className="cert-item">
-            <span className="cert-name">Python Programming</span>
-            <span className="cert-org">University of Michigan</span>
-          </div>
-          <hr className="cert-divider" />
-          <div className="cert-item">
-            <span className="cert-name">Machine Learning Basics</span>
-            <span className="cert-org">Stanford University</span>
-          </div>
-          <hr className="cert-divider" />
-          <div className="cert-item">
-            <span className="cert-name">Database Management</span>
-            <span className="cert-org">IBM</span>
-          </div>
-          <hr className="cert-divider" />
-          <div className="cert-item">
-            <span className="cert-name">Web Development</span>
-            <span className="cert-org">The Odin Project</span>
-          </div>
+          {certifications.length === 0 ? (
+            <div className="no-certs">No certifications added yet</div>
+          ) : (
+            certifications.map((cert, index) => (
+              <div key={cert._id}>
+                <div className="cert-item">
+                  <div className="cert-info">
+                    <span className="cert-name">{cert.name}</span>
+                    <span className="cert-org">{cert.organization}</span>
+                  </div>
+                  <div className="cert-actions">
+                    <button 
+                      className="cert-download-btn"
+                      onClick={() => handleCertDownload(cert._id, cert.name)}
+                    >
+                      ⬇️
+                    </button>
+                    <button 
+                      className="cert-delete-btn"
+                      onClick={() => handleCertDelete(cert._id)}
+                    >
+                      🗑️
+                    </button>
+                  </div>
+                </div>
+                {index < certifications.length - 1 && <hr className="cert-divider" />}
+              </div>
+            ))
+          )}
         </div>
 
-        <button className="add-course">Add Course</button>
+        <button className="add-course" onClick={() => setShowCertModal(true)}>
+          Add Certification
+        </button>
       </div>
+
+      {/* Certification Upload Modal */}
+      {showCertModal && (
+        <div className="modal-overlay" onClick={() => setShowCertModal(false)}>
+          <div className="cert-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>Add Certification</h2>
+              <button 
+                className="close-btn"
+                onClick={() => setShowCertModal(false)}
+              >
+                ✕
+              </button>
+            </div>
+            
+            <form onSubmit={handleCertUpload}>
+              <div className="modal-body">
+                <div className="form-group">
+                  <label className="form-label">Certificate Name *</label>
+                  <input
+                    type="text"
+                    className="form-input"
+                    placeholder="e.g., AWS Cloud Practitioner"
+                    value={certName}
+                    onChange={(e) => setCertName(e.target.value)}
+                  />
+                </div>
+                
+                <div className="form-group">
+                  <label className="form-label">Issuing Organization *</label>
+                  <input
+                    type="text"
+                    className="form-input"
+                    placeholder="e.g., Amazon Web Services"
+                    value={certOrg}
+                    onChange={(e) => setCertOrg(e.target.value)}
+                  />
+                </div>
+                
+                <div className="form-group">
+                  <label className="form-label">Certificate File (PDF/Image) *</label>
+                  <div className="file-input-wrapper">
+                    <input
+                      type="file"
+                      accept=".pdf,image/*"
+                      onChange={handleCertFileChange}
+                      id="cert-upload"
+                    />
+                    <label htmlFor="cert-upload" className="file-label">
+                      {certFile ? certFile.name : 'Choose file (max 10MB)'}
+                    </label>
+                  </div>
+                </div>
+
+                {certError && (
+                  <div className="error-message">{certError}</div>
+                )}
+                
+                {certSuccess && (
+                  <div className="success-message">{certSuccess}</div>
+                )}
+              </div>
+              
+              <div className="modal-footer">
+                <button 
+                  type="button" 
+                  className="cancel-btn"
+                  onClick={() => setShowCertModal(false)}
+                >
+                  Cancel
+                </button>
+                <button 
+                  type="submit" 
+                  className="submit-btn"
+                  disabled={uploadingCert}
+                >
+                  {uploadingCert ? 'Uploading...' : 'Upload'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
     </div>
   );
