@@ -1,6 +1,5 @@
 const User = require('../models/User');
 const UserLinks = require('../models/UserLinks');
-const bcrypt = require('bcryptjs');
 
 // @desc    Create new user
 // @route   POST /api/users
@@ -35,15 +34,11 @@ exports.createUser = async (req, res) => {
       });
     }
 
-    // Hash password
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(password, salt);
-
     // Create user
     const user = await User.create({
       name,
       email,
-      password: hashedPassword,
+      password,
       rollNumber
     });
 
@@ -394,16 +389,13 @@ exports.bulkCreateUsers = async (req, res) => {
       }
     }
 
-    // Hash passwords and create users
+    // Create users
     for (const user of validUsers) {
       try {
-        const salt = await bcrypt.genSalt(10);
-        const hashedPassword = await bcrypt.hash(user.password, salt);
-
         const createdUser = await User.create({
           name: user.name,
           email: user.email,
-          password: hashedPassword,
+          password: user.password,
           rollNumber: user.rollNumber
         });
 

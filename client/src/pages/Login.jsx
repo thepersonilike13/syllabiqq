@@ -1,19 +1,42 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
-import { setStoredUser } from "../utils/auth";
+import { setStoredUser, setToken } from "../utils/auth";
 import "../styles/login.css";
 
 export default function Login({ switchToSignup }) {
-  const [regNo, setRegNo] = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const navigate = useNavigate();
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    navigate("/codeDashboard");
+    setLoading(true);
+    setError("");
+
+    try {
+      const response = await axios.post("http://localhost:5000/api/auth/login", {
+        email,
+        password
+      });
+
+      const data = response.data;
+
+      if (data.success) {
+        setToken(data.token);
+        setStoredUser(data.data.user);
+        navigate("/profiledashboard");
+      } else {
+        setError(data.message);
+      }
+    } catch (err) {
+      console.error("Login error:", err);
+      setError(err.response?.data?.message || "Server error. Please try again later.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -31,10 +54,10 @@ export default function Login({ switchToSignup }) {
 
           <form onSubmit={handleSubmit}>
             <input
-              type="text"
-              placeholder="Register Number"
-              value={regNo}
-              onChange={(e) => setRegNo(e.target.value)}
+              type="email"
+              placeholder="Email Address"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
             />
 
             <input

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import axios from "axios";
 import "../styles/signup.css";
 
 export default function Signup({ switchToLogin }) {
@@ -6,23 +7,47 @@ export default function Signup({ switchToLogin }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
-  const handleSignup = (e) => {
+  const handleSignup = async (e) => {
     e.preventDefault();
+    setError("");
     
     if (!rollNo || !email || !password || !confirm) {
-      alert("Please fill all fields");
+      setError("Please fill all fields");
       return;
     }
     
     if (password !== confirm) {
-      alert("Passwords do not match");
+      setError("Passwords do not match");
       return;
     }
-    
-    console.log({ rollNo, email, password });
-    alert("Signup successful!");
-    switchToLogin();
+
+    setLoading(true);
+
+    try {
+      const response = await axios.post("http://localhost:5000/api/auth/register", {
+        name: rollNo, // Using rollNo as name for now
+        email,
+        password,
+        rollNumber: rollNo
+      });
+
+      const data = response.data;
+
+      if (data.success) {
+        alert("Signup successful! Please login.");
+        switchToLogin();
+      } else {
+        setError(data.message);
+      }
+    } catch (err) {
+      console.error("Signup error:", err);
+      setError(err.response?.data?.message || "Server error. Please try again later.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -75,7 +100,11 @@ export default function Signup({ switchToLogin }) {
               />
             </div>
 
-            <button type="submit">CREATE ACCOUNT</button>
+            {error && <div className="error-message">{error}</div>}
+
+            <button type="submit" disabled={loading}>
+              {loading ? "Creating Account..." : "CREATE ACCOUNT"}
+            </button>
           </form>
 
           <p className="switch-link">

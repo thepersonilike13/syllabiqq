@@ -1,6 +1,8 @@
 const User = require('../models/User');
 const UserLinks = require('../models/UserLinks');
-const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
+
+const JWT_SECRET = process.env.JWT_SECRET || 'syllabiq_secret_key';
 
 // Register a new user
 exports.register = async (req, res) => {
@@ -42,13 +44,10 @@ exports.register = async (req, res) => {
       });
     }
 
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(password, salt);
-
     const user = await User.create({
       name: name.trim(),
       email: email.toLowerCase().trim(),
-      password: hashedPassword,
+      password: password,
       rollNumber: rollNumber.trim()
     });
 
@@ -113,8 +112,7 @@ exports.login = async (req, res) => {
       });
     }
 
-    const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) {
+    if (password !== user.password) {
       return res.status(400).json({
         success: false,
         message: 'Invalid credentials'
@@ -129,9 +127,18 @@ exports.login = async (req, res) => {
       });
     }
 
+    // Generate JWT token with roll number only
+    const token = jwt.sign(
+      { rollNumber: user.rollNumber },
+      JWT_SECRET,
+      { expiresIn: '7d' }
+    );
+
     res.status(200).json({
       success: true,
       message: 'Login successful',
+      token,
+
       data: {
         user: {
           id: user._id,
