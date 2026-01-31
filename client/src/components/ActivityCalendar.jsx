@@ -120,7 +120,7 @@ function ActivityCalendar({ data }) {
                     className="day-bar-fill" 
                     style={{ 
                       width: `${(count / maxCount) * 100}%`,
-                      backgroundColor: count > 0 ? '#0ff' : '#333'
+                      backgroundColor: count > 0 ? '#22c55e' : '#333'
                     }}
                   />
                 </div>

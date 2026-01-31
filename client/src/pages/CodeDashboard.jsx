@@ -7,7 +7,7 @@ import RatingChart from '../components/RatingChart';
 import TopicAnalysis from '../components/TopicAnalysis';
 import PlatformBreakdown from '../components/PlatformBreakdown';
 import ActivityCalendar from '../components/ActivityCalendar';
-import '../styles/dashboard.css';
+import '../styles/codedashboard.css';
 
 function CodeDashboard() {
   const [userData, setUserData] = useState(null);
