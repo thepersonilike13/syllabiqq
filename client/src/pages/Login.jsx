@@ -1,19 +1,19 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import axios from "axios";
+import { setStoredUser } from "../utils/auth";
 import "../styles/login.css";
 
 export default function Login({ switchToSignup }) {
   const [regNo, setRegNo] = useState("");
   const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const navigate = useNavigate();
 
   const handleSubmit = (e) => {
     e.preventDefault();
-
-    if (!regNo || !password) {
-      alert("Please fill all fields");
-      return;
-    }
-
-    console.log({ regNo, password });
+    navigate("/dashboard");
   };
 
   return (
@@ -44,7 +44,11 @@ export default function Login({ switchToSignup }) {
               onChange={(e) => setPassword(e.target.value)}
             />
 
-            <button type="submit">LOG IN</button>
+            {error && <div className="error-message">{error}</div>}
+            
+            <button type="submit" disabled={loading}>
+              {loading ? "Logging in..." : "LOG IN"}
+            </button>
           </form>
 
           <p className="switch-link">

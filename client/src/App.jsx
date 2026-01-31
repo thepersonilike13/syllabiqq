@@ -1,6 +1,7 @@
 import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom'
 import Auth from './pages/Auth'
 import Dashboard from './pages/Dashboard'
+import EditProfile from './pages/EditProfile'
 import Profile from './pages/Profile'
 import './App.css'
 
@@ -23,6 +24,7 @@ function App() {
         <Route path="/login" element={<Auth />} />
         <Route path="/profile" element={<Profile />} />
         <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/edit-profile" element={<EditProfile />} />
       </Routes>
     </Router>
   )

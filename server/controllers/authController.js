@@ -90,16 +90,22 @@ exports.register = async (req, res) => {
 // Login user
 exports.login = async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const { email, password, rollNumber } = req.body;
 
-    if (!email || !password) {
+    if ((!email && !rollNumber) || !password) {
       return res.status(400).json({
         success: false,
-        message: 'Please provide email and password'
+        message: 'Please provide (email or roll number) and password'
       });
     }
 
-    const user = await User.findOne({ email: email.toLowerCase().trim() });
+    let user;
+    if (rollNumber) {
+      user = await User.findOne({ rollNumber: rollNumber.trim() });
+    } else {
+      user = await User.findOne({ email: email.toLowerCase().trim() });
+    }
+
     if (!user) {
       return res.status(400).json({
         success: false,
