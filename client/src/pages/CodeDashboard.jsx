@@ -57,6 +57,8 @@ function CodeDashboard() {
 
       if (!userHandles.leetcode && !userHandles.codeforces) {
         setError('Please add your LeetCode or Codeforces handle in your profile.');
+          setLoading(false); 
+          
         return;
       }
 
